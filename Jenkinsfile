@@ -16,7 +16,7 @@ pipeline {
         }
         stage('Checkout') {
             steps {
-                git 'https://github.com/souravdutta06/SouravDotNetWebApp.git'
+                checkout scm
             }
         }
         stage('Build & Test') {

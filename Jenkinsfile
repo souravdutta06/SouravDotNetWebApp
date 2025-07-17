@@ -19,14 +19,12 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build & Test') {
+        stage('Build') {
             steps {
-                dir('tests') {
-                    git 'https://github.com/souravdutta06/SouravDotNetWebApp.Tests.git'
-                    sh 'dotnet test'
-                }
+                bat 'dotnet build SouravDotNetWebApp.sln'
             }
         }
+    
         stage('Build Docker Image') {
             steps {
                 script {

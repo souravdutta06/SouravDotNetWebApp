@@ -30,7 +30,9 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PWD')]) {
                     sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_USER} --password-stdin"
+                     script { // Wrap method calls in a script block
                     dockerImage.push()
+                     }
                 }
             }
         }

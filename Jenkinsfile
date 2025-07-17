@@ -49,19 +49,28 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to Azure VM') {
-            steps {
+       steps {
                 sshagent(['app-vm-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${APP_VM} "
-                        docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
-                        docker stop dotnet-app || true
-                        docker rm dotnet-app || true
-                        docker run -d --name dotnet-app -p 80:80 ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    "
+                        ssh -o StrictHostKeyChecking=no ${APP_VM} "
+                            docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            docker stop dotnet-app || echo 'No container to stop'
+                            docker rm dotnet-app || echo 'No container to remove'
+                            docker run -d \
+                                --name dotnet-app \
+                                --restart=always \
+                                -p 80:80 \
+                                --health-cmd='curl -f http://localhost:80 || exit 1' \
+                                --health-interval=30s \
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        "
                     """
                 }
             }
+    }
+    post {
+        always {
+            sh 'docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true'  // Clean up agent
         }
     }
 }

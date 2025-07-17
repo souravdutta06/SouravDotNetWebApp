@@ -1,11 +1,19 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout true
+    }
     environment {
         DOCKER_IMAGE = "souravdutta06/sourav-dotnet-webapp"
         DOCKER_TAG = "latest"
         APP_VM = "sysadmin@20.57.129.245"  // Replace with actual IP
     }
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
         stage('Checkout') {
             steps {
                 git 'https://github.com/souravdutta06/SouravDotNetWebApp.git'

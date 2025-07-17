@@ -1,72 +1,52 @@
 pipeline {
     agent any
-    
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
-        DOCKER_IMAGE = 'souravdutta06/SouravDotNetWebApp'
+        DOCKER_IMAGE = "souravdutta06/sourav-dotnet-webapp"
         DOCKER_TAG = "latest"
-        DEPLOYMENT_SERVER = '20.3.128.98'
-        DEPLOYMENT_USER = 'azureuser'
-        DEPLOYMENT_SSH_KEY = credentials('azure-vm-ssh-key')
+        APP_VM = "sysadmin@20.57.129.245"  // Replace with actual IP
     }
-    
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/souravdutta06/SouravDotNetWebApp.git'
             }
         }
-        
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                sh 'dotnet build'
+                dir('tests') {
+                    git 'https://github.com/souravdutta06/SouravDotNetWebApp.Tests.git'
+                    sh 'dotnet test'
+                }
             }
         }
-        
-        stage('Test') {
-            steps {
-                sh 'dotnet test'
-            }
-        }
-        
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
         }
-        
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
-                    }
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PWD')]) {
+                    sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_USER} --password-stdin"
+                    dockerImage.push()
                 }
             }
         }
-        
         stage('Deploy to Azure VM') {
             steps {
-                script {
-                    sshagent(['azure-vm-ssh-key']) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${DEPLOYMENT_USER}@${DEPLOYMENT_SERVER} \
-                            "docker pull ${DOCKER_IMAGE}:${DOCKER_TAG} && \
-                            docker stop dotnetwebapp || true && \
-                            docker rm dotnetwebapp || true && \
-                            docker run -d -p 80:80 --name dotnetwebapp ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                        """
-                    }
+                sshagent(['app-vm-ssh-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${APP_VM} "
+                        docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker stop dotnet-app || true
+                        docker rm dotnet-app || true
+                        docker run -d --name dotnet-app -p 80:80 ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    "
+                    """
                 }
             }
-        }
-    }
-    
-    post {
-        always {
-            cleanWs()
         }
     }
 }

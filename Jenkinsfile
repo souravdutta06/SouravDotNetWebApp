@@ -1,11 +1,5 @@
 pipeline {
-    agent {
- docker {
-            image 'mcr.microsoft.com/dotnet/sdk:8.0'  // Official .NET image
-            args '--user root'  // Optional: run as root if needed
-        }
-        
-    }
+    agent any
     options {
         skipDefaultCheckout true
     }

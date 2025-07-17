@@ -72,8 +72,10 @@ pipeline {
                     passwordVariable: 'DOCKER_PWD'
                 )]) {
                     sh "echo \$DOCKER_PWD | docker login -u \$DOCKER_USER --password-stdin"
+                    {
                     dockerImage.push()
                     dockerImage.push('latest')  // Additional latest tag
+                    }
                 }
             }
         }

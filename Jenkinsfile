@@ -21,7 +21,14 @@ pipeline {
         }
         stage('Build') {
             steps {
-                bat 'dotnet build SouravDotNetWebApp.sln'
+                // Use sh for Linux/macOS, bat for Windows
+                script {
+                    if (isUnix()) {
+                        sh 'dotnet build SouravDotNetWebApp.sln'
+                    } else {
+                        bat 'dotnet build SouravDotNetWebApp.sln'
+                    }
+                }
             }
         }
     

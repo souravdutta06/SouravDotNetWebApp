@@ -1,5 +1,11 @@
 pipeline {
-    agent any
+    agent {
+ docker {
+            image 'mcr.microsoft.com/dotnet/sdk:8.0'  // Official .NET image
+            args '--user root'  // Optional: run as root if needed
+        }
+        
+    }
     options {
         skipDefaultCheckout true
     }
@@ -17,18 +23,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-        stage('Install .NET SDK') {
-            steps {
-                sh '''
-                    # Install .NET 8 SDK (modify version if needed)
-                    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-                    sudo dpkg -i packages-microsoft-prod.deb
-                    rm packages-microsoft-prod.deb
-                    sudo apt-get update
-                    sudo apt-get install -y dotnet-sdk-8.0
-                '''
             }
         }
         stage('Build') {
